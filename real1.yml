@@ -1,0 +1,85 @@
+---
+- name: Deploying Real Estate Django App
+  hosts: all
+  remote_user: ubuntu
+  become: yes
+
+  tasks:
+
+  - name: Update Apt Repository
+    apt:
+      update_cache: yes
+
+  - name: Install required system Packages
+    apt:
+      name:
+       - python3-pip
+       - postgresql
+       - gcc
+       - musl-dev
+       - libpq-dev
+       - python3-dev
+      state: present
+      update_cache: yes
+
+  - name: Install Virtual Environment
+    pip:
+      name: virtualenv
+
+  - name: Copy Django File to Ubuntu Slave Node
+    when: ansible_distribution == 'Ubuntu'
+    remote_user: 'ubuntu'
+    copy:
+      src: /home/ubuntu/Real-Estate-Django-Web-App
+      dest: /home/ubuntu
+
+  - name: Create Virtual Environment Ubuntu
+    remote_user: 'ubuntu'
+    shell:
+      cmd: python3 -m virtualenv realvenv
+      chdir: /home/ubuntu
+
+  - name: Install Requirements in Virtual Environment Ubuntu
+    remote_user: 'ubuntu'  
+    pip:
+      requirements: /home/ubuntu/Real-Estate-Django-Web-App/requirements.txt
+      virtualenv: /home/ubuntu/realvenv
+
+  - name: Install Pillow Ubuntu
+    when: ansible_distribution == 'Ubuntu'
+    remote_user: 'ubuntu'  
+    pip:
+      name: pillow
+      virtualenv: /home/ubuntu/realvenv
+  
+
+  - name: Install Gunicorn Ubuntu
+    when: ansible_distribution == 'Ubuntu'
+    remote_user: 'ubuntu'  
+    pip:
+      name: gunicorn
+      virtualenv: /home/ubuntu/realvenv  
+
+  - name: Migrate database
+    command: /home/ubuntu/realvenv/bin/python manage.py migrate
+    args:
+     chdir: /home/ubuntu/Real-Estate-Django-Web-App
+
+
+  - name: Copy Gunicorn Service File Ubuntu
+    when: ansible_distribution == 'Ubuntu'
+    remote_user: 'ubuntu'
+    copy:
+      src: /home/ubuntu/Real-Estate-Django-Web-App/gunicorn.service
+      dest: /etc/systemd/system/gunicorn.service
+
+
+  - name: Start and Enable Gunicorn Service Ubuntu
+    when: ansible_distribution == 'Ubuntu'
+    remote_user: 'ubuntu'  
+    service:
+      name: gunicorn
+      state: started
+      enabled: yes 
+
+

@@ -1,0 +1,13 @@
+[Unit]
+Description=Gunicorn instance to serve myproject
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/Real-Estate-Django-Web-App
+Environment="PATH=/home/ubuntu/realvenv/bin"
+ExecStart=/home/ubuntu/realvenv/bin/gunicorn --bind 0.0.0.0:8000 realestate.wsgi:application
+
+[Install]
+WantedBy=multi-user.target 
